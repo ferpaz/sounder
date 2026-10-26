@@ -25,12 +25,14 @@ sounder.exe /version
 | `/loop times` | `-l`, `/l`, `/L`, `--loop` | Reproduce el número indicado de veces. `-1`: indefinidamente; `0`: ninguna. Por defecto reproduce una vez. |
 | `/timer ms` | `-t`, `/t`, `/T`, `--timer` | Limita la ejecución a un número positivo de milisegundos. |
 | `/async` | `-a`, `/a`, `/A`, `--async` | Reproduce una vez de forma asíncrona; mantiene el proceso vivo hasta el límite de `/timer` (2000 ms por defecto), aunque termine el WAV. Ignora `/loop`. |
-| `--background` | `-b` | Inicia una instancia oculta y devuelve el control inmediatamente. Por defecto reproduce el WAV completo; respeta `/loop`, `/timer` y `/stop`. |
+| `--background` | `-b`, `/B` | Inicia una instancia oculta y devuelve el control inmediatamente. Por defecto reproduce el WAV completo; respeta `/loop`, `/timer` y `/stop`. |
 | `--ignore-audio-errors` | — | Muestra los fallos de reproducción de audio, pero devuelve `0`. Los errores de parámetros y de archivos siguen devolviendo `1`. |
 | `/help` | `-h`, `/h`, `/H`, `/?`, `--help`, `-?` | Muestra ayuda en la consola. Sin argumentos también muestra ayuda. |
 | `/version` | `-v`, `/v`, `/V`, `--version` | Muestra la versión. |
 
 Normalmente el proceso espera hasta terminar la reproducción, recibir `/stop`, alcanzar el temporizador o recibir Ctrl+C. `/async` cambia el modo de reproducción, pero no convierte la aplicación en un proceso desligado de la consola.
+
+La ayuda muestra únicamente las opciones con guion. Los alias con diagonal (`/stop`, `/L`, `/B`, etc.) siguen soportados por compatibilidad y están documentados en la tabla anterior.
 
 Con `-b` o `--background`, la instancia inicial termina después de iniciar otra instancia de Sounder sin ventana de consola, usando el mismo directorio de trabajo. El WAV continúa hasta terminar: **no hay un límite de 2000 ms por defecto en este modo**. Puedes combinarlo con `--loop` o `--timer` y detenerlo ejecutando `sounder.exe /stop` desde ese mismo directorio. Ctrl+C en la consola original no detiene la instancia oculta. Si agregas también `--async`, se conserva su comportamiento original, incluido el límite predeterminado de 2000 ms y la precedencia sobre `/loop`.
 

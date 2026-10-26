@@ -21,8 +21,8 @@ internal static class Program
         var timer = new Option<int?>("--timer", "-t", "/t", "/T", "/timer")
         { Description = "Stop after this many milliseconds (positive integer)." };
         var asyncOption = new Option<bool>("--async", "-a", "/a", "/A", "/async")
-        { Description = "Use asynchronous playback; stay alive for /timer, or 2000 ms. Ignores /loop." };
-        var background = new Option<bool>("--background", "-b")
+        { Description = "Use asynchronous playback; stay alive for --timer, or 2000 ms. Ignores --loop." };
+        var background = new Option<bool>("--background", "-b", "/B")
         { Description = "Start a hidden player and return immediately. By default, play the entire WAV." };
         var ignoreAudioErrors = new Option<bool>("--ignore-audio-errors")
         { Description = "Report audio playback failures but return 0. File and parameter errors still return 1." };
@@ -41,7 +41,7 @@ internal static class Program
             var path = result.GetValue(file);
             if (loops < -1 || timeout is <= 0)
             {
-                Console.Error.WriteLine("/loop must be -1 or greater; /timer must be a positive 32-bit integer.");
+                Console.Error.WriteLine("--loop must be -1 or greater; --timer must be a positive 32-bit integer.");
                 return 1;
             }
             try
@@ -53,7 +53,7 @@ internal static class Program
                 if (path is null)
                 {
                     if (result.GetValue(stop)) return 0;
-                    Console.Error.WriteLine("Specify a WAV filename, or use /help.");
+                    Console.Error.WriteLine("Specify a WAV filename, or use --help.");
                     return 1;
                 }
                 path = Path.GetFullPath(path);
@@ -82,6 +82,12 @@ internal static class Program
                 return 1;
             }
         });
-        return await root.Parse(args.Length == 0 ? ["--help"] : args).InvokeAsync();
+        var parsed = root.Parse(args.Length == 0 ? ["--help"] : args);
+        // Parse legacy aliases first; omit them from help and typo suggestions afterward.
+        // Values are already bound to their Option objects, so / aliases still work.
+        foreach (var option in root.Options)
+            foreach (var alias in option.Aliases.Where(a => a.StartsWith('/')).ToArray())
+                option.Aliases.Remove(alias);
+        return await parsed.InvokeAsync();
     }
 }

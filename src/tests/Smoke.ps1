@@ -77,7 +77,12 @@ try {
     } finally { $writer.Dispose() }
 
     foreach ($alias in @('-h','/h','/H','/?','/help','--help','-?')) {
-        Assert-That ((Invoke-Sounder @($alias)).Output.Contains('Usage:')) "Missing help alias $alias"
+        $help = (Invoke-Sounder @($alias)).Output
+        Assert-That ($help.Contains('Usage:')) "Missing help alias $alias"
+        Assert-That (-not $help.Contains('/')) "Help requested with $alias displayed a slash alias."
+        foreach ($option in @('--stop','--loop','--timer','--async','--background','--ignore-audio-errors','--help','--version')) {
+            Assert-That ($help.Contains($option)) "Help omitted $option."
+        }
     }
     Assert-That ((Invoke-Sounder @()).Output.Contains('Usage:')) 'No-argument help failed.'
     foreach ($alias in @('-v','/v','/V','/version','--version')) {
@@ -150,7 +155,7 @@ try {
     $stale = Invoke-Sounder @('/timer','700',$wave)
     Assert-That ($stale.Elapsed -ge 650) 'Stale stopfile interrupted playback.'
     Assert-That (-not (Test-Path -LiteralPath (Join-Path $scratch 'stopfile'))) 'Stale stopfile was not cleaned.'
-    foreach ($alias in @('-b', '--background')) {
+    foreach ($alias in @('-b', '--background', '/B')) {
         # A relative Unicode path also proves preservation of the working directory.
         $background = Start-BackgroundPlayer @($alias, [IO.Path]::GetFileName($wave))
         Start-Sleep -Milliseconds 2200
