@@ -1,0 +1,23 @@
+# Build and publish output
+**/bin/
+**/obj/
+**/TestResults/
+**/artifacts/
+**/stopfile
+# Visual Studio / VS Code local state
+.vs/
+**/.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.code-workspace
+*.log
+*.trx
+*.coverage
+*.coveragexml
+# Local analysis tools
+.tools/

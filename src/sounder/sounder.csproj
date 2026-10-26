@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <Version>2.0.0</Version>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <AssemblyName>sounder</AssemblyName>
+    <RootNamespace>Sounder</RootNamespace>
+    <Description>Windows WAV command-line player. Original Sounder by Eli Fulkerson (2012).</Description>
+    <Authors>Eli Fulkerson (original Sounder, 2012); Sounder contributors</Authors>
+    <Copyright>Original Sounder copyright Eli Fulkerson, 2012.</Copyright>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <DebugType>embedded</DebugType>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <PublishDir>$(MSBuildThisFileDirectory)../../publish/$(Version)/$(RuntimeIdentifier)/</PublishDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.13" />
+  </ItemGroup>
+  <PropertyGroup Condition="'$(RuntimeIdentifier)' != ''">
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <PublishTrimmed>false</PublishTrimmed>
+  </PropertyGroup>
+  <Target Name="ValidateWindowsRuntime" BeforeTargets="PrepareForBuild;PrepareForPublish">
+    <Error Condition="'$(OS)' != 'Windows_NT'" Text="Sounder only supports Windows." />
+    <Error Condition="'$(RuntimeIdentifier)' != '' and '$(RuntimeIdentifier)' != 'win-x64' and '$(RuntimeIdentifier)' != 'win-arm64'" Text="Supported runtime identifiers: win-x64 and win-arm64." />
+  </Target>
+  <Target Name="RequirePublishRuntime" BeforeTargets="PrepareForPublish">
+    <Error Condition="'$(RuntimeIdentifier)' == ''" Text="Specify -r win-x64 or -r win-arm64 when publishing." />
+  </Target>
+</Project>
