@@ -11,6 +11,8 @@ sounder.exe "C:\Sonidos\aviso.wav"
 sounder.exe /loop 3 "C:\Sonidos\aviso.wav"
 sounder.exe /loop -1 /timer 10000 "C:\Sonidos\aviso.wav"
 sounder.exe /async /timer 2000 "C:\Sonidos\aviso.wav"
+sounder.exe --background "C:\Sonidos\aviso.wav"
+sounder.exe -b --loop 3 "C:\Sonidos\aviso.wav"
 sounder.exe /stop
 sounder.exe /help
 sounder.exe /version
@@ -22,10 +24,15 @@ sounder.exe /version
 | `/loop times` | `-l`, `/l`, `/L`, `--loop` | Reproduce el número indicado de veces. `-1`: indefinidamente; `0`: ninguna. Por defecto reproduce una vez. |
 | `/timer ms` | `-t`, `/t`, `/T`, `--timer` | Limita la ejecución a un número positivo de milisegundos. |
 | `/async` | `-a`, `/a`, `/A`, `--async` | Reproduce una vez de forma asíncrona; mantiene el proceso vivo hasta el límite de `/timer` (2000 ms por defecto), aunque termine el WAV. Ignora `/loop`. |
+| `--background` | `-b` | Inicia una instancia oculta y devuelve el control inmediatamente. Por defecto reproduce el WAV completo; respeta `/loop`, `/timer` y `/stop`. |
 | `/help` | `-h`, `/h`, `/H`, `/?`, `--help`, `-?` | Muestra ayuda en la consola. Sin argumentos también muestra ayuda. |
 | `/version` | `-v`, `/v`, `/V`, `--version` | Muestra la versión. |
 
-El proceso espera hasta terminar la reproducción, recibir `/stop`, alcanzar el temporizador o recibir Ctrl+C. `/async` cambia el modo de reproducción, pero no convierte la aplicación en un proceso desligado de la consola.
+Normalmente el proceso espera hasta terminar la reproducción, recibir `/stop`, alcanzar el temporizador o recibir Ctrl+C. `/async` cambia el modo de reproducción, pero no convierte la aplicación en un proceso desligado de la consola.
+
+Con `-b` o `--background`, la instancia inicial termina después de iniciar otra instancia de Sounder sin ventana de consola, usando el mismo directorio de trabajo. El WAV continúa hasta terminar: **no hay un límite de 2000 ms por defecto en este modo**. Puedes combinarlo con `--loop` o `--timer` y detenerlo ejecutando `sounder.exe /stop` desde ese mismo directorio. Ctrl+C en la consola original no detiene la instancia oculta. Si agregas también `--async`, se conserva su comportamiento original, incluido el límite predeterminado de 2000 ms y la precedencia sobre `/loop`.
+
+El código de salida de la instancia inicial indica si se pudo iniciar el proceso: `0` significa que Windows lo creó. Los argumentos y la existencia del archivo se validan antes del lanzamiento; los errores posteriores de audio ocurren en la instancia oculta y no se devuelven a la consola original. Para diagnosticarlos, ejecuta el mismo comando sin `--background`.
 
 `/stop` puede utilizarse sin archivo. Si también se indica un WAV, envía la señal y comienza la nueva reproducción. Los procesos que se deban comunicar tienen que compartir el **directorio de trabajo**, que debe ser escribible. Al iniciar, cada reproductor descarta un `stopfile` anterior después de 150 ms; las señales posteriores se comprueban cada 100 ms. Evita enviar `/stop` durante ese período inicial. El archivo de señal permanece hasta que otra reproducción lo limpia.
 

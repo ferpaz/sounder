@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 namespace Sounder;
@@ -21,9 +22,11 @@ internal static class Program
         { Description = "Stop after this many milliseconds (positive integer)." };
         var asyncOption = new Option<bool>("--async", "-a", "/a", "/A", "/async")
         { Description = "Use asynchronous playback; stay alive for /timer, or 2000 ms. Ignores /loop." };
+        var background = new Option<bool>("--background", "-b")
+        { Description = "Start a hidden player and return immediately. By default, play the entire WAV." };
         var file = new Argument<string?>("filename.wav") { Arity = ArgumentArity.ZeroOrOne, Description = "WAV file to play." };
         var root = new RootCommand("Sounder 2.0.0 — Windows WAV player. Original Sounder by Eli Fulkerson (2012).")
-        { stop, loop, timer, asyncOption, file };
+        { stop, loop, timer, asyncOption, background, file };
         var helpOption = root.Options.Single(o => o.Name == "--help");
         foreach (var alias in new[] { "/h", "/H", "/?", "/help" }) helpOption.Aliases.Add(alias);
         var versionOption = root.Options.Single(o => o.Name == "--version");
@@ -55,9 +58,14 @@ internal static class Program
                 if (!File.Exists(path))
                     throw new FileNotFoundException("WAV file not found.", path);
                 var asynchronous = result.GetValue(asyncOption);
+                if (result.GetValue(background))
+                {
+                    BackgroundProcess.Start(path, loops, timeout, asynchronous);
+                    return 0;
+                }
                 return await Playback.RunAsync(path, loops, timeout ?? (asynchronous ? 2000 : null), asynchronous, cancellationToken);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or Win32Exception)
             {
                 Console.Error.WriteLine($"sounder: {ex.Message}");
                 return 1;
