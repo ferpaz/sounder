@@ -1,9 +1,13 @@
+# JetBrains Rider
+.idea/
+
 # Build and publish output
 **/bin/
 **/obj/
 **/TestResults/
 **/artifacts/
 **/stopfile
+
 # Visual Studio / VS Code local state
 .vs/
 **/.vs/
@@ -19,5 +23,6 @@
 *.trx
 *.coverage
 *.coveragexml
+
 # Local analysis tools
 .tools/
