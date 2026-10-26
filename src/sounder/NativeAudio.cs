@@ -14,7 +14,15 @@ internal sealed partial class NativeAudio : IDisposable
     [return: MarshalAs(UnmanagedType.Bool)]
     private static unsafe partial bool GetErrorString(uint error, char* result, uint length);
 
-    internal NativeAudio(string path) => Command($"open \"{path}\" type waveaudio alias {alias}");
+    [LibraryImport("winmm.dll", EntryPoint = "waveOutGetNumDevs")]
+    private static partial uint GetOutputDeviceCount();
+
+    internal NativeAudio(string path)
+    {
+        // Zero means Windows exposes no output devices (or could not enumerate them).
+        if (GetOutputDeviceCount() == 0) throw new NoAudioDeviceException();
+        Command($"open \"{path}\" type waveaudio alias {alias}");
+    }
     internal void Play() => Command($"play {alias} from 0");
     internal bool IsPlaying => Command($"status {alias} mode") == "playing";
 
@@ -26,9 +34,11 @@ internal sealed partial class NativeAudio : IDisposable
         var error = SendString(command, buffer, capacity, 0);
         if (error != 0)
         {
+            // Recheck after a failure in case the device disappeared during playback.
+            if (GetOutputDeviceCount() == 0) throw new NoAudioDeviceException();
             buffer[0] = '\0';
             var message = GetErrorString(error, buffer, capacity) ? new string(buffer) : $"MCI error {error}";
-            throw new IOException($"Windows audio: {message}");
+            throw new AudioPlaybackException($"Windows audio: {message}");
         }
         return new string(buffer);
     }

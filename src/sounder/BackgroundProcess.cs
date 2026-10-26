@@ -8,7 +8,7 @@ internal static partial class BackgroundProcess
 {
     private const uint CreateNoWindow = 0x08000000;
 
-    internal static unsafe void Start(string path, int loops, int? milliseconds, bool asynchronous)
+    internal static unsafe void Start(string path, int loops, int? milliseconds, bool asynchronous, bool ignoreAudioErrors)
     {
         var executable = Environment.ProcessPath ?? throw new IOException("Cannot locate the Sounder executable.");
         var arguments = new List<string> { QuoteFile(executable) };
@@ -24,6 +24,7 @@ internal static partial class BackgroundProcess
             arguments.Add(timeout.ToString(CultureInfo.InvariantCulture));
         }
         if (asynchronous) arguments.Add("--async");
+        if (ignoreAudioErrors) arguments.Add("--ignore-audio-errors");
         arguments.Add("--");
         arguments.Add(QuoteFile(path));
         var command = (string.Join(' ', arguments) + '\0').ToCharArray();

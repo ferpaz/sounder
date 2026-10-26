@@ -24,9 +24,11 @@ internal static class Program
         { Description = "Use asynchronous playback; stay alive for /timer, or 2000 ms. Ignores /loop." };
         var background = new Option<bool>("--background", "-b")
         { Description = "Start a hidden player and return immediately. By default, play the entire WAV." };
+        var ignoreAudioErrors = new Option<bool>("--ignore-audio-errors")
+        { Description = "Report audio playback failures but return 0. File and parameter errors still return 1." };
         var file = new Argument<string?>("filename.wav") { Arity = ArgumentArity.ZeroOrOne, Description = "WAV file to play." };
         var root = new RootCommand("Sounder 2.0.0 — Windows WAV player. Original Sounder by Eli Fulkerson (2012).")
-        { stop, loop, timer, asyncOption, background, file };
+        { stop, loop, timer, asyncOption, background, ignoreAudioErrors, file };
         var helpOption = root.Options.Single(o => o.Name == "--help");
         foreach (var alias in new[] { "/h", "/H", "/?", "/help" }) helpOption.Aliases.Add(alias);
         var versionOption = root.Options.Single(o => o.Name == "--version");
@@ -60,10 +62,19 @@ internal static class Program
                 var asynchronous = result.GetValue(asyncOption);
                 if (result.GetValue(background))
                 {
-                    BackgroundProcess.Start(path, loops, timeout, asynchronous);
+                    BackgroundProcess.Start(path, loops, timeout, asynchronous, result.GetValue(ignoreAudioErrors));
                     return 0;
                 }
                 return await Playback.RunAsync(path, loops, timeout ?? (asynchronous ? 2000 : null), asynchronous, cancellationToken);
+            }
+            catch (AudioPlaybackException ex)
+            {
+                // Scripts can opt into best-effort audio without hiding file/CLI errors.
+                var ignore = result.GetValue(ignoreAudioErrors);
+                // A tolerated notice must not populate PowerShell's error stream either.
+                var output = ignore ? Console.Out : Console.Error;
+                output.WriteLine($"sounder: {ex.Message}");
+                return ignore ? 0 : 1;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException or Win32Exception)
             {

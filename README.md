@@ -13,6 +13,7 @@ sounder.exe /loop -1 /timer 10000 "C:\Sonidos\aviso.wav"
 sounder.exe /async /timer 2000 "C:\Sonidos\aviso.wav"
 sounder.exe --background "C:\Sonidos\aviso.wav"
 sounder.exe -b --loop 3 "C:\Sonidos\aviso.wav"
+sounder.exe --ignore-audio-errors "C:\Sonidos\aviso.wav"
 sounder.exe /stop
 sounder.exe /help
 sounder.exe /version
@@ -25,6 +26,7 @@ sounder.exe /version
 | `/timer ms` | `-t`, `/t`, `/T`, `--timer` | Limita la ejecución a un número positivo de milisegundos. |
 | `/async` | `-a`, `/a`, `/A`, `--async` | Reproduce una vez de forma asíncrona; mantiene el proceso vivo hasta el límite de `/timer` (2000 ms por defecto), aunque termine el WAV. Ignora `/loop`. |
 | `--background` | `-b` | Inicia una instancia oculta y devuelve el control inmediatamente. Por defecto reproduce el WAV completo; respeta `/loop`, `/timer` y `/stop`. |
+| `--ignore-audio-errors` | — | Muestra los fallos de reproducción de audio, pero devuelve `0`. Los errores de parámetros y de archivos siguen devolviendo `1`. |
 | `/help` | `-h`, `/h`, `/H`, `/?`, `--help`, `-?` | Muestra ayuda en la consola. Sin argumentos también muestra ayuda. |
 | `/version` | `-v`, `/v`, `/V`, `--version` | Muestra la versión. |
 
@@ -36,7 +38,17 @@ El código de salida de la instancia inicial indica si se pudo iniciar el proces
 
 `/stop` puede utilizarse sin archivo. Si también se indica un WAV, envía la señal y comienza la nueva reproducción. Los procesos que se deban comunicar tienen que compartir el **directorio de trabajo**, que debe ser escribible. Al iniciar, cada reproductor descarta un `stopfile` anterior después de 150 ms; las señales posteriores se comprueban cada 100 ms. Evita enviar `/stop` durante ese período inicial. El archivo de señal permanece hasta que otra reproducción lo limpia.
 
-Se admiten rutas con espacios y caracteres Unicode; usa comillas y, para nombres que comiencen con un guion, `--` antes de la ruta. Windows debe disponer de un dispositivo de audio y admitir el formato WAV. Los valores numéricos ausentes, no enteros o fuera de rango generan un error. La ayuda y la versión se muestran en consola. Los códigos de salida son `0` para finalización normal, temporizador o `/stop`, `1` para errores y `130` para cancelación con Ctrl+C.
+Se admiten rutas con espacios y caracteres Unicode; usa comillas y, para nombres que comiencen con un guion, `--` antes de la ruta. Windows debe disponer de un dispositivo de audio y admitir el formato WAV. Los valores numéricos ausentes, no enteros o fuera de rango generan un error. La ayuda y la versión se muestran en consola.
+
+Por defecto, los fallos de reproducción de audio muestran un mensaje y devuelven `1`. Para utilizar Sounder como aviso dentro de scripts BAT o PS1 sin que un problema de audio interrumpa el script, agrega **`--ignore-audio-errors`**: muestra el mismo mensaje, pero devuelve `0`. Si Windows no encuentra ningún dispositivo de salida disponible, muestra: «No hay un dispositivo de sonido disponible para reproducir archivos de audio». Los demás errores de audio conservan el detalle informado por Windows. En `--background`, el parámetro se pasa al proceso oculto; la instancia inicial sigue devolviendo el control sin esperar al audio.
+
+| Código | Significado |
+| --- | --- |
+| `0` | Reproducción terminada, temporizador, `/stop`, ayuda/versión, lanzamiento background o fallo de audio con `--ignore-audio-errors`. |
+| `1` | Fallo de audio sin `--ignore-audio-errors`; parámetros inválidos, falta del nombre del archivo, **archivo inexistente**, problemas con rutas/permisos/`stopfile` o fallo al iniciar el proceso oculto (incluso con el parámetro). |
+| `130` | Cancelación manual con Ctrl+C. |
+
+El parámetro solo ignora fallos de audio. Por ejemplo, con `--ignore-audio-errors`, un archivo existente con formato WAV inválido muestra el error de audio y devuelve `0`; una ruta que no existe devuelve `1`. Sin ese parámetro, ambos devuelven `1`. Los avisos de audio tolerados se escriben en la salida estándar (`stdout`), para no alimentar el flujo de errores de PowerShell; los errores no ignorados usan `stderr`. El código `0` no garantiza sonido audible: también puede haber volumen silenciado o una salida virtual.
 
 ## Desarrollo
 

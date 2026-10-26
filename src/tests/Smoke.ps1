@@ -24,9 +24,11 @@ function Invoke-Sounder([string[]] $Arguments, [int] $ExitCode = 0) {
     $watch = [Diagnostics.Stopwatch]::StartNew()
     $process = Start-Sounder $Arguments
     if (-not $process.WaitForExit(10000)) { throw "Timed out: $Arguments" }
-    $output = $process.StandardOutput.ReadToEnd() + $process.StandardError.ReadToEnd()
+    $standardOutput = $process.StandardOutput.ReadToEnd()
+    $standardError = $process.StandardError.ReadToEnd()
+    $output = $standardOutput + $standardError
     if ($process.ExitCode -ne $ExitCode) { throw "Exit $($process.ExitCode), expected $ExitCode for '$Arguments': $output" }
-    return @{ Output = $output; Elapsed = $watch.ElapsedMilliseconds }
+    return @{ Output = $output; ErrorOutput = $standardError; Elapsed = $watch.ElapsedMilliseconds }
 }
 function Assert-That([bool] $Condition, [string] $Message) {
     if (-not $Condition) { throw $Message }
@@ -100,9 +102,38 @@ try {
         @('/timer','bad',$wave), @('/timer'), @('/loop'), @('--unknown'),
         @('/timer','2147483648',$wave), @('missing.wav'), @($wave,$wave)
         @('-b','missing.wav'), @('--background','/loop','bad',$wave), @('--background')
-    )) { Invoke-Sounder $arguments 1 | Out-Null }
+        @('--ignore-audio-errors','missing.wav'), @('--ignore-audio-errors','--loop','bad',$wave)
+        @('--ignore-audio-errors','--loop','-2',$wave), @('--ignore-audio-errors','--unknown')
+        @('--ignore-audio-errors')
+    )) {
+        $invalid = Invoke-Sounder $arguments 1
+        Assert-That (-not [string]::IsNullOrWhiteSpace($invalid.Output)) "Missing error message for '$arguments'."
+    }
+
+    # An existing but invalid WAV is an audio failure, not a missing-file/CLI error.
+    $badWave = Join-Path $scratch 'invalid.wav'
+    [IO.File]::WriteAllText($badWave, 'This is not a WAV file.')
+    foreach ($arguments in @(@($badWave), @('/async',$badWave), @('/loop','2',$badWave))) {
+        $audioFailure = Invoke-Sounder $arguments 1
+        Assert-That ($audioFailure.Output.Contains('sounder:')) 'Audio failure did not display its diagnostic.'
+        Assert-That (-not $audioFailure.Output.Contains('Usage:')) 'Audio failure was incorrectly classified as a parameter error.'
+        $ignoredAudioFailure = Invoke-Sounder (@('--ignore-audio-errors') + $arguments) 0
+        Assert-That ($ignoredAudioFailure.Output -eq $audioFailure.Output) 'Ignoring audio errors changed or suppressed the diagnostic.'
+        Assert-That ($audioFailure.ErrorOutput.Contains('sounder:')) 'Strict audio failure did not use stderr.'
+        Assert-That ([string]::IsNullOrWhiteSpace($ignoredAudioFailure.ErrorOutput)) 'Ignored audio failure populated the error stream.'
+    }
+
+    # File-system errors must not be swallowed with audio failures.
+    $stopDirectory = Join-Path $scratch 'stopfile'
+    [IO.Directory]::CreateDirectory($stopDirectory) | Out-Null
+    try {
+        $stopFailure = Invoke-Sounder @('--ignore-audio-errors','/stop') 1
+        Assert-That ($stopFailure.Output.Contains('sounder:')) 'Stop-file error did not display its diagnostic.'
+    } finally { [IO.Directory]::Delete($stopDirectory) }
 
     $once = Invoke-Sounder @($wave)
+    $ignoredSuccess = Invoke-Sounder @('--ignore-audio-errors','--timer','350',$wave)
+    Assert-That ([string]::IsNullOrWhiteSpace($ignoredSuccess.Output)) 'Successful audio with ignore-audio-errors emitted an error.'
     $twice = Invoke-Sounder @('/loop','2',$wave)
     Assert-That ($once.Elapsed -ge 2500 -and $twice.Elapsed -ge ($once.Elapsed + 2000)) 'Loop count / natural completion failed.'
     $asyncDefault = Invoke-Sounder @('/async','/loop','-1',$wave)
@@ -134,7 +165,7 @@ try {
     Assert-That ($backgroundLoop.WaitForExit(2000)) 'Background /stop failed or working directory changed.'
     Assert-That ($backgroundLoop.ExitCode -eq 0) 'Background /stop returned an error.'
 
-    $backgroundTimer = Start-BackgroundPlayer @('--background','--loop','-1','--timer','2000',$wave)
+    $backgroundTimer = Start-BackgroundPlayer @('--background','--ignore-audio-errors','--loop','-1','--timer','2000',$wave)
     Assert-That ($backgroundTimer.WaitForExit(3000)) 'Background timer failed.'
     Assert-That ($backgroundTimer.ExitCode -eq 0) 'Background timer returned an error.'
     $backgroundAsync = Start-BackgroundPlayer @('-b','--async','--loop','-1',$wave)
@@ -146,7 +177,7 @@ try {
         Assert-That ($managedChild.WaitForExit(5000)) 'Background failed with dotnet sounder.dll.'
         Assert-That ($managedChild.ExitCode -eq 0) 'Managed background playback failed.'
     }
-    Write-Host 'PASS: aliases, validation, Unicode WAV, loops, timer, async, stopfile and detached background playback.'
+    Write-Host 'PASS: aliases, validation, non-fatal audio errors, missing-file errors, Unicode WAV, loops, timer, async, stopfile and background.'
 } finally {
     foreach ($process in $running) {
         if (-not $process.HasExited) { $process.Kill(); $process.WaitForExit() }
