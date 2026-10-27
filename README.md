@@ -1,4 +1,4 @@
-# Sounder 2.0.0
+# Sounder
 
 A command-line WAV player for **Windows x64 and Windows ARM64**, built with **.NET 10**.
 
