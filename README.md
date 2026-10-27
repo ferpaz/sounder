@@ -1,62 +1,62 @@
 # Sounder 2.0.0
 
-Reproductor de archivos WAV desde la línea de comandos para **Windows x64 y Windows ARM64**, desarrollado en **.NET 10**.
+A command-line WAV player for **Windows x64 and Windows ARM64**, built with **.NET 10**.
 
-El Sounder original fue creado por **Eli Fulkerson en 2012**. El último instalador encontrado por el responsable de este proyecto data de **2017**; la versión original está sin mantenimiento. Esta versión continúa su utilidad con una implementación actualizada. Autor original: [Eli Fulkerson](https://www.elifulkerson.com/).
+The original Sounder was created by **Eli Fulkerson in 2012**. The latest installer found by this project's maintainer dates from **2017**; the original version is no longer maintained. This version continues its functionality with an updated implementation. Original author: [Eli Fulkerson](https://www.elifulkerson.com/).
 
-## Uso
+## Usage
 
 ```powershell
-sounder.exe "C:\Sonidos\aviso.wav"
-sounder.exe /loop 3 "C:\Sonidos\aviso.wav"
-sounder.exe /loop -1 /timer 10000 "C:\Sonidos\aviso.wav"
-sounder.exe /async /timer 2000 "C:\Sonidos\aviso.wav"
-sounder.exe --background "C:\Sonidos\aviso.wav"
-sounder.exe -b --loop 3 "C:\Sonidos\aviso.wav"
-sounder.exe --ignore-audio-errors "C:\Sonidos\aviso.wav"
+sounder.exe "C:\Sounds\alert.wav"
+sounder.exe /loop 3 "C:\Sounds\alert.wav"
+sounder.exe /loop -1 /timer 10000 "C:\Sounds\alert.wav"
+sounder.exe /async /timer 2000 "C:\Sounds\alert.wav"
+sounder.exe --background "C:\Sounds\alert.wav"
+sounder.exe -b --loop 3 "C:\Sounds\alert.wav"
+sounder.exe --ignore-audio-errors "C:\Sounds\alert.wav"
 sounder.exe /stop
 sounder.exe /help
 sounder.exe /version
 ```
 
-| Parámetro | Alias compatibles | Comportamiento |
+| Parameter | Supported aliases | Behavior |
 | --- | --- | --- |
-| `/stop` | `-s`, `/s`, `/S`, `--stop` | Crea `stopfile` en el directorio de trabajo para detener las reproducciones iniciadas allí. |
-| `/loop times` | `-l`, `/l`, `/L`, `--loop` | Reproduce el número indicado de veces. `-1`: indefinidamente; `0`: ninguna. Por defecto reproduce una vez. |
-| `/timer ms` | `-t`, `/t`, `/T`, `--timer` | Limita la ejecución a un número positivo de milisegundos. |
-| `/async` | `-a`, `/a`, `/A`, `--async` | Reproduce una vez de forma asíncrona; mantiene el proceso vivo hasta el límite de `/timer` (2000 ms por defecto), aunque termine el WAV. Ignora `/loop`. |
-| `--background` | `-b`, `/B` | Inicia una instancia oculta y devuelve el control inmediatamente. Por defecto reproduce el WAV completo; respeta `/loop`, `/timer` y `/stop`. |
-| `--ignore-audio-errors` | — | Muestra los fallos de reproducción de audio, pero devuelve `0`. Los errores de parámetros y de archivos siguen devolviendo `1`. |
-| `/help` | `-h`, `/h`, `/H`, `/?`, `--help`, `-?` | Muestra ayuda en la consola. Sin argumentos también muestra ayuda. |
-| `/version` | `-v`, `/v`, `/V`, `--version` | Muestra la versión. |
+| `/stop` | `-s`, `/s`, `/S`, `--stop` | Creates `stopfile` in the working directory to stop playback started there. |
+| `/loop times` | `-l`, `/l`, `/L`, `--loop` | Plays the specified number of times. `-1`: indefinitely; `0`: no playback. Plays once by default. |
+| `/timer ms` | `-t`, `/t`, `/T`, `--timer` | Limits execution to a positive number of milliseconds. |
+| `/async` | `-a`, `/a`, `/A`, `--async` | Plays once asynchronously; keeps the process alive until the `/timer` limit (2000 ms by default), even if the WAV has finished. Ignores `/loop`. |
+| `--background` | `-b`, `/B` | Starts a hidden instance and returns control immediately. Plays the entire WAV by default; respects `/loop`, `/timer`, and `/stop`. |
+| `--ignore-audio-errors` | — | Displays audio playback failures but returns `0`. Parameter and file errors still return `1`. |
+| `/help` | `-h`, `/h`, `/H`, `/?`, `--help`, `-?` | Displays console help. Running without arguments also displays help. |
+| `/version` | `-v`, `/v`, `/V`, `--version` | Displays the version. |
 
-Normalmente el proceso espera hasta terminar la reproducción, recibir `/stop`, alcanzar el temporizador o recibir Ctrl+C. `/async` cambia el modo de reproducción, pero no convierte la aplicación en un proceso desligado de la consola.
+Normally, the process waits until playback finishes, it receives `/stop`, the timer expires, or Ctrl+C is pressed. `/async` changes the playback mode but does not detach the application from the console.
 
-La ayuda muestra únicamente las opciones con guion. Los alias con diagonal (`/stop`, `/L`, `/B`, etc.) siguen soportados por compatibilidad y están documentados en la tabla anterior.
+Help displays only options starting with a hyphen. Slash aliases (`/stop`, `/L`, `/B`, etc.) remain supported for compatibility and are documented in the table above.
 
-Con `-b` o `--background`, la instancia inicial termina después de iniciar otra instancia de Sounder sin ventana de consola, usando el mismo directorio de trabajo. El WAV continúa hasta terminar: **no hay un límite de 2000 ms por defecto en este modo**. Puedes combinarlo con `--loop` o `--timer` y detenerlo ejecutando `sounder.exe /stop` desde ese mismo directorio. Ctrl+C en la consola original no detiene la instancia oculta. Si agregas también `--async`, se conserva su comportamiento original, incluido el límite predeterminado de 2000 ms y la precedencia sobre `/loop`.
+With `-b` or `--background`, the initial instance exits after starting another Sounder instance without a console window, using the same working directory. The WAV continues until it finishes: **there is no default 2000 ms limit in this mode**. You can combine it with `--loop` or `--timer` and stop it by running `sounder.exe /stop` from that same directory. Ctrl+C in the original console does not stop the hidden instance. If you also specify `--async`, its original behavior is preserved, including the default 2000 ms limit and precedence over `/loop`.
 
-El código de salida de la instancia inicial indica si se pudo iniciar el proceso: `0` significa que Windows lo creó. Los argumentos y la existencia del archivo se validan antes del lanzamiento; los errores posteriores de audio ocurren en la instancia oculta y no se devuelven a la consola original. Para diagnosticarlos, ejecuta el mismo comando sin `--background`.
+The initial instance's exit code indicates whether the process could be started: `0` means Windows created it. Arguments and file existence are validated before launch; subsequent audio errors occur in the hidden instance and are not returned to the original console. To diagnose them, run the same command without `--background`.
 
-`/stop` puede utilizarse sin archivo. Si también se indica un WAV, envía la señal y comienza la nueva reproducción. Los procesos que se deban comunicar tienen que compartir el **directorio de trabajo**, que debe ser escribible. Al iniciar, cada reproductor descarta un `stopfile` anterior después de 150 ms; las señales posteriores se comprueban cada 100 ms. Evita enviar `/stop` durante ese período inicial. El archivo de señal permanece hasta que otra reproducción lo limpia.
+`/stop` can be used without a file. If a WAV is also specified, it sends the signal and starts the new playback. Processes that need to communicate must share the **working directory**, which must be writable. On startup, each player discards an old `stopfile` after 150 ms; subsequent signals are checked every 100 ms. Avoid sending `/stop` during that initial period. The signal file remains until another playback instance clears it.
 
-Se admiten rutas con espacios y caracteres Unicode; usa comillas y, para nombres que comiencen con un guion, `--` antes de la ruta. Windows debe disponer de un dispositivo de audio y admitir el formato WAV. Los valores numéricos ausentes, no enteros o fuera de rango generan un error. La ayuda y la versión se muestran en consola.
+Paths with spaces and Unicode characters are supported; use quotes and, for names starting with a hyphen, place `--` before the path. Windows must have an audio device and support the WAV format. Missing, non-integer, or out-of-range numeric values produce an error. Help and version information are displayed in the console.
 
-Por defecto, los fallos de reproducción de audio muestran un mensaje y devuelven `1`. Para utilizar Sounder como aviso dentro de scripts BAT o PS1 sin que un problema de audio interrumpa el script, agrega **`--ignore-audio-errors`**: muestra el mismo mensaje, pero devuelve `0`. Si Windows no encuentra ningún dispositivo de salida disponible, muestra: «No hay un dispositivo de sonido disponible para reproducir archivos de audio». Los demás errores de audio conservan el detalle informado por Windows. En `--background`, el parámetro se pasa al proceso oculto; la instancia inicial sigue devolviendo el control sin esperar al audio.
+By default, audio playback failures display a message and return `1`. To use Sounder as a notification inside BAT or PS1 scripts without an audio problem interrupting the script, add **`--ignore-audio-errors`**: it displays the same message but returns `0`. If Windows cannot find any available output device, Sounder displays a message explaining that no sound device is available to play audio files. Other audio errors retain the details reported by Windows. In `--background` mode, the option is forwarded to the hidden process; the initial instance still returns control without waiting for audio playback.
 
-| Código | Significado |
+| Code | Meaning |
 | --- | --- |
-| `0` | Reproducción terminada, temporizador, `/stop`, ayuda/versión, lanzamiento background o fallo de audio con `--ignore-audio-errors`. |
-| `1` | Fallo de audio sin `--ignore-audio-errors`; parámetros inválidos, falta del nombre del archivo, **archivo inexistente**, problemas con rutas/permisos/`stopfile` o fallo al iniciar el proceso oculto (incluso con el parámetro). |
-| `130` | Cancelación manual con Ctrl+C. |
+| `0` | Playback completed, timer expired, `/stop`, help/version, background launch, or an audio failure with `--ignore-audio-errors`. |
+| `1` | Audio failure without `--ignore-audio-errors`; invalid parameters, missing filename, **nonexistent file**, path/permission/`stopfile` problems, or failure to start the hidden process (even with the option). |
+| `130` | Manual cancellation with Ctrl+C. |
 
-El parámetro solo ignora fallos de audio. Por ejemplo, con `--ignore-audio-errors`, un archivo existente con formato WAV inválido muestra el error de audio y devuelve `0`; una ruta que no existe devuelve `1`. Sin ese parámetro, ambos devuelven `1`. Los avisos de audio tolerados se escriben en la salida estándar (`stdout`), para no alimentar el flujo de errores de PowerShell; los errores no ignorados usan `stderr`. El código `0` no garantiza sonido audible: también puede haber volumen silenciado o una salida virtual.
+The option only ignores audio failures. For example, with `--ignore-audio-errors`, an existing file with an invalid WAV format displays the audio error and returns `0`; a path that does not exist returns `1`. Without that option, both return `1`. Tolerated audio notices are written to standard output (`stdout`) to avoid populating PowerShell's error stream; errors that are not ignored use `stderr`. Exit code `0` does not guarantee audible sound: the volume may be muted, or the output may be a virtual device.
 
-## Desarrollo
+## Development
 
-Requiere Windows y el SDK de .NET 10. Abre `src/sounder.slnx` en una versión de Visual Studio compatible con .NET 10, o abre el repositorio en Visual Studio Code con C# Dev Kit.
+Requires Windows and the .NET 10 SDK. Open `src/sounder.slnx` in a version of Visual Studio that supports .NET 10, or open the repository in Visual Studio Code with C# Dev Kit.
 
-Desde la raíz:
+From the repository root:
 
 ```powershell
 dotnet restore .\src\sounder.slnx --locked-mode
@@ -65,29 +65,29 @@ dotnet run --project .\src\sounder -- /help
 pwsh -NoProfile -File .\src\tests\Smoke.ps1
 ```
 
-Los parámetros se analizan con [System.CommandLine 2.0.13](https://www.nuget.org/packages/System.CommandLine/2.0.13), paquete de Microsoft ampliamente utilizado en NuGet. La reproducción usa la API de audio de Windows.
+Arguments are parsed with [System.CommandLine 2.0.13](https://www.nuget.org/packages/System.CommandLine/2.0.13), a widely used Microsoft package on NuGet. Playback uses the Windows audio API.
 
-## Publicación: un EXE por arquitectura
+## Publishing: one EXE per architecture
 
-Desde la raíz del repositorio:
+From the repository root:
 
 ```powershell
-# Publica ambas arquitecturas
+# Publish both architectures
 pwsh -NoProfile -File .\src\Publish.ps1
 
-# O publica solo una
+# Or publish just one
 pwsh -NoProfile -File .\src\Publish.ps1 -Runtime win-x64
 pwsh -NoProfile -File .\src\Publish.ps1 -Runtime win-arm64
 ```
 
-También puedes ejecutar directamente:
+You can also run these commands directly:
 
 ```powershell
 dotnet publish .\src\sounder\sounder.csproj -c Release -r win-x64 --self-contained true
 dotnet publish .\src\sounder\sounder.csproj -c Release -r win-arm64 --self-contained true
 ```
 
-El proyecto configura la publicación como archivo único, incluye el runtime .NET y lleva los símbolos de depuración dentro del binario. Los resultados se ubican automáticamente en:
+The project configures single-file publishing, includes the .NET runtime, and embeds debugging symbols in the binary. Output is automatically placed in:
 
 ```text
 publish/
@@ -96,6 +96,6 @@ publish/
     win-arm64/sounder.exe
 ```
 
-Cada distribución contiene un único `sounder.exe`; el usuario no necesita instalar .NET. Durante la ejecución, .NET puede extraer sus bibliotecas nativas en su directorio temporal. `winmm.dll` es un componente de Windows. El archivo WAV se proporciona por separado. No se admiten Windows x86, ARM de 32 bits, Linux ni macOS. La arquitectura ARM soportada es ARM64.
+Each distribution contains a single `sounder.exe`; users do not need to install .NET. At runtime, .NET may extract its native libraries to its temporary directory. `winmm.dll` is a Windows component. The WAV file is supplied separately. Windows x86, 32-bit ARM, Linux, and macOS are not supported. The supported ARM architecture is ARM64.
 
-La versión se define en `src/sounder/sounder.csproj`. Al incrementarla, actualiza también `AssemblyVersion`, `FileVersion` y el texto de presentación. La ruta de publicación usa esa versión automáticamente. `publish/` y los archivos generados de compilación y del IDE están excluidos de Git.
+The version is defined in `src/sounder/sounder.csproj`. When incrementing it, also update `AssemblyVersion`, `FileVersion`, and the introductory text. The publish path uses that version automatically. `publish/` and generated build and IDE files are excluded from Git.
